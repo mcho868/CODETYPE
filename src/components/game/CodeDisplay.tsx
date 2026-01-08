@@ -132,7 +132,7 @@ export function CodeDisplay({
 
               return (
                 <div
-                  key={lineKey ?? lineIndex}
+                  key={lineIndex}
                   {...lineProps}
                   className={cn(lineProps.className, "whitespace-pre")}
                 >
