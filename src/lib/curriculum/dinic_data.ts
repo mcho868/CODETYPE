@@ -339,6 +339,94 @@ class Dinic {
     }
 }
 `,
+    c: `// Dinic's Algorithm
+#include <stdlib.h>
+
+typedef struct {
+  int to;
+  int rev;
+  int cap;
+} Edge;
+
+typedef struct {
+  Edge **adj;
+  int *adj_size;
+  int *adj_cap;
+  int *level;
+  int *it;
+  int n;
+} Dinic;
+
+static void dinic_init(Dinic *d, int n) {
+  d->n = n;
+  d->adj = (Edge **)calloc(n, sizeof(Edge *));
+  d->adj_size = (int *)calloc(n, sizeof(int));
+  d->adj_cap = (int *)calloc(n, sizeof(int));
+  d->level = (int *)malloc(sizeof(int) * n);
+  d->it = (int *)malloc(sizeof(int) * n);
+}
+
+static void dinic_add_edge(Dinic *d, int u, int v, int cap) {
+  if (d->adj_size[u] >= d->adj_cap[u]) {
+    d->adj_cap[u] = d->adj_cap[u] ? d->adj_cap[u] * 2 : 4;
+    d->adj[u] = (Edge *)realloc(d->adj[u], sizeof(Edge) * d->adj_cap[u]);
+  }
+  if (d->adj_size[v] >= d->adj_cap[v]) {
+    d->adj_cap[v] = d->adj_cap[v] ? d->adj_cap[v] * 2 : 4;
+    d->adj[v] = (Edge *)realloc(d->adj[v], sizeof(Edge) * d->adj_cap[v]);
+  }
+  Edge fwd = {v, d->adj_size[v], cap};
+  Edge rev = {u, d->adj_size[u], 0};
+  d->adj[u][d->adj_size[u]++] = fwd;
+  d->adj[v][d->adj_size[v]++] = rev;
+}
+
+static int dinic_bfs(Dinic *d, int s, int t) {
+  int *queue = (int *)malloc(sizeof(int) * d->n);
+  int qh = 0, qt = 0;
+  for (int i = 0; i < d->n; i++) d->level[i] = -1;
+  d->level[s] = 0;
+  queue[qt++] = s;
+  while (qh < qt) {
+    int v = queue[qh++];
+    for (int i = 0; i < d->adj_size[v]; i++) {
+      Edge *e = &d->adj[v][i];
+      if (e->cap > 0 && d->level[e->to] < 0) {
+        d->level[e->to] = d->level[v] + 1;
+        queue[qt++] = e->to;
+      }
+    }
+  }
+  free(queue);
+  return d->level[t] >= 0;
+}
+
+static int dinic_dfs(Dinic *d, int v, int t, int f) {
+  if (v == t) return f;
+  for (int i = d->it[v]; i < d->adj_size[v]; i++, d->it[v] = i) {
+    Edge *e = &d->adj[v][i];
+    if (e->cap > 0 && d->level[v] < d->level[e->to]) {
+      int ret = dinic_dfs(d, e->to, t, f < e->cap ? f : e->cap);
+      if (ret > 0) {
+        e->cap -= ret;
+        d->adj[e->to][e->rev].cap += ret;
+        return ret;
+      }
+    }
+  }
+  return 0;
+}
+
+int dinic_max_flow(Dinic *d, int s, int t) {
+  int flow = 0;
+  while (dinic_bfs(d, s, t)) {
+    for (int i = 0; i < d->n; i++) d->it[i] = 0;
+    int f;
+    while ((f = dinic_dfs(d, s, t, 1 << 30)) > 0) flow += f;
+  }
+  return flow;
+}
+`,
   },
 };
 
